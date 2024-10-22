@@ -4,6 +4,7 @@ import (
 	"image"
 	"image/color"
 	"log"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -52,19 +53,23 @@ func (g *Game) Update() error {
 		}
 
 	}
+
 	return nil
 }
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.RGBA{120, 180, 255, 255})
+	// screen.Fill(color.White)
 	opts := ebiten.DrawImageOptions{}
+
 	opts.GeoM.Translate(g.Hero.X, g.Hero.Y)
-	screen.DrawImage(g.Hero.img.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image),
+
+	screen.DrawImage(g.Hero.img.SubImage(
+		image.Rect(0, 0, 16, 16)).(*ebiten.Image),
 		&opts)
 	opts.GeoM.Reset()
 
 	// renduring multiple villains
-
 	for _, sprite := range g.villain {
 		opts.GeoM.Translate(sprite.X, sprite.Y)
 
@@ -76,11 +81,21 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	}
 
 	// border
-
+	g.Border(g.Hero.X, g.Hero.Y)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return ebiten.WindowSize()
+}
+
+func (g *Game) Border(width, hight float64) {
+	g.Hero.X = math.Max(g.Hero.X, 0.0)
+
+	g.Hero.Y = math.Max(g.Hero.Y, 0.0)
+
+	g.Hero.X = math.Min(g.Hero.X, 620)
+	g.Hero.Y = math.Min(g.Hero.Y, 460)
+
 }
 
 func main() {
