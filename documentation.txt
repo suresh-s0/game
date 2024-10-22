@@ -1,10 +1,12 @@
+*** prerequisite
+
 # Download go
-# create a file " main.go"
-# go mod init "project name"
+# create a file " main.go".
+# go mod init "project name".
 # run "go get -u github.com/hajimehoshi/ebiten/v2"  for installing  the Ebitengine and import it.
 
-# in the (linux ) system install the X11 Development Libraries  for graphical rendering with "sudo apt-get install -y libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libxxf86vm-dev"
+# in the (linux ) system install the X11 Development Libraries  for graphical rendering with "sudo apt-get install -y libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libxxf86vm-dev".
 
-# OpenGL Development Libraries with " sudo apt-get install libgl1-mesa-dev"
+# OpenGL Development Libraries with " sudo apt-get install libgl1-mesa-dev".
 
 # then write the code run with "go run ."
