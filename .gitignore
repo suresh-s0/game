@@ -1,0 +1,27 @@
+# Binaries
+*.exe
+*.exe~
+*.out
+
+# Vendor directory
+vendor/
+
+# Go module cache
+/go.sum
+/go.mod
+
+# Log files
+*.log
+
+# IDE files
+.idea/
+*.swp
+*.swo
+
+# Temporary files
+*.tmp
+*.temp
+
+# Other
+.DS_Store
+
