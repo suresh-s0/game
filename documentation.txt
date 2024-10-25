@@ -1,10 +1,63 @@
+*** prerequisite
+
 # Download go
-# create a file " main.go"
-# go mod init "project name"
+# create a file " main.go".
+# go mod init "project name".
 # run "go get -u github.com/hajimehoshi/ebiten/v2"  for installing  the Ebitengine and import it.
 
-# in the (linux ) system install the X11 Development Libraries  for graphical rendering with "sudo apt-get install -y libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libxxf86vm-dev"
+# in the (linux ) system install the X11 Development Libraries  for graphical rendering with "sudo apt-get install -y libx11-dev libxi-dev libxcursor-dev libxrandr-dev libxinerama-dev libxxf86vm-dev".
 
-# OpenGL Development Libraries with " sudo apt-get install libgl1-mesa-dev"
+# OpenGL Development Libraries with " sudo apt-get install libgl1-mesa-dev".
 
 # then write the code run with "go run ."
+
+
+=================================================================================================================
+Compile to WebAssembly: You need to build your Go code to WebAssembly (WASM). Run the following command in your project directory:
+
+bash
+Copy code
+GOOS=js GOARCH=wasm go build -o your_game.wasm
+This will create the your_game.wasm file.
+
+Copy the wasm_exec.js file: You need the wasm_exec.js file to handle the WebAssembly execution in the browser. This file is usually located in your Go installation under $(go env GOROOT)/misc/wasm/. Copy it to your project directory. Here’s how:
+
+bash
+Copy code
+cp $(go env GOROOT)/misc/wasm/wasm_exec.js .
+Serve your files: You can start a simple HTTP server to serve your files. If you have Python installed, you can use the following command:
+
+bash
+Copy code
+python3 -m http.server
+or for Python 2:
+
+bash
+Copy code
+python -m SimpleHTTPServer
+Open the web browser: Go to http://localhost:8000 in your web browser. Make sure your index.html file is properly set up to load your_game.wasm and wasm_exec.js. Here's a basic example of how your index.html might look:
+
+html
+Copy code
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Your Game</title>
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go();
+        WebAssembly.instantiateStreaming(fetch("your_game.wasm"), go.importObject).then(result => {
+            go.run(result.instance);
+        });
+    </script>
+</head>
+<body>
+    <h1>Your Game</h1>
+</body>
+</html>
+Play your game: Once everything is set up, your game should run in the browser.
+
+================================================================================================================
+
+ cp /snap/go/10730/misc/wasm/wasm_exec.js ~/Desktop/PROJECTS/game/
