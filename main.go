@@ -5,6 +5,7 @@ import (
 	"image/color"
 	"log"
 	"math"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
@@ -64,6 +65,48 @@ func CheckCollisionVertical(sprite *Sprite, colliders []image.Rectangle) {
 		}
 	}
 }
+func generateRandomColliders(num int, maxX, maxY int) []image.Rectangle {
+	colliders := make([]image.Rectangle, 0, num)
+
+	for i := 0; i < num; i++ {
+		var newRect image.Rectangle
+		valid := false
+
+		for !valid {
+
+			x := rand.Intn(maxX)
+			y := rand.Intn(maxY)
+
+			width := rand.Intn(30) + 20
+			height := rand.Intn(150) + 20
+
+			// Ensure the rectangle is within the window bounds
+			if x+width > maxX {
+				width = maxX - x
+			}
+			if y+height > maxY {
+				height = maxY - y
+			}
+
+			// Create the rectangle
+			newRect = image.Rect(x, y, x+width, y+height)
+
+			// Check for overlap with existing colliders
+			valid = true
+			for _, col := range colliders {
+				if newRect.Overlaps(col) {
+					valid = false
+					break
+				}
+			}
+		}
+
+		// Add the non-overlapping rectangle to the list
+		colliders = append(colliders, newRect)
+	}
+
+	return colliders
+}
 
 func (g *Game) Border() {
 	g.Hero.X = math.Max(g.Hero.X, 0.0)
@@ -95,15 +138,16 @@ func (g *Game) Update() error {
 	g.Hero.Y += g.Hero.Dy
 	CheckCollisionVertical(g.Hero, g.colliders)
 
-	for _, villain := range g.villains {
+	for i, villain := range g.villains {
 		villain.Dx = 0.0
 		villain.Dy = 0.0
 
+		// Calculate distance from Hero
 		xDistance := villain.X - g.Hero.X
 		yDistance := villain.Y - g.Hero.Y
-
 		speed := 1.0
 
+		// Move villain towards Hero
 		if xDistance > 1.0 {
 			villain.Dx -= speed
 		} else if xDistance < -1.0 {
@@ -116,11 +160,39 @@ func (g *Game) Update() error {
 			villain.Dy += speed
 		}
 
+		// Check distance to other villains to avoid overlap
+		for j, otherVillain := range g.villains {
+			if i != j {
+				// Calculate the distance between two villains
+				villainDistanceX := villain.X - otherVillain.X
+				villainDistanceY := villain.Y - otherVillain.Y
+				villainDistance := math.Sqrt(villainDistanceX*villainDistanceX + villainDistanceY*villainDistanceY)
+
+				// Ensure they maintain a minimum distance of 20 pixels
+				minDistance := 20.0
+				if villainDistance < minDistance {
+					// Adjust direction to maintain distance
+					if villainDistanceX > 0 {
+						villain.Dx += speed / 2 // move right
+					} else {
+						villain.Dx -= speed / 2 // move left
+					}
+					if villainDistanceY > 0 {
+						villain.Dy += speed / 2 // move down
+					} else {
+						villain.Dy -= speed / 2 // move up
+					}
+				}
+			}
+		}
+
+		// Update villain position
 		villain.X += villain.Dx
 		CheckCollisionHorizontal(villain.Sprite, g.colliders)
 		villain.Y += villain.Dy
 		CheckCollisionVertical(villain.Sprite, g.colliders)
 
+		// Check if Hero is caught
 		if math.Abs(villain.X-g.Hero.X) < 15 && math.Abs(villain.Y-g.Hero.Y) < 15 {
 			g.caught = true
 		}
@@ -131,6 +203,7 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.Fill(color.White)
+
 	opts := ebiten.DrawImageOptions{}
 
 	opts.GeoM.Translate(g.Hero.X, g.Hero.Y)
@@ -157,14 +230,14 @@ func (g *Game) Draw(screen *ebiten.Image) {
 			float32(col.Min.Y),
 			float32(col.Dx()),
 			float32(col.Dy()),
-			color.RGBA{0, 0, 5, 100},
+			color.RGBA{0, 0, 5, 200},
 			true,
 		)
 	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
-	return 640, 480
+	return ebiten.WindowSize()
 }
 
 func main() {
@@ -193,14 +266,7 @@ func main() {
 			{&Sprite{img: villain, X: 50.0, Y: 150.0}},
 			{&Sprite{img: villain, X: 500.0, Y: 300.0}},
 		},
-		colliders: []image.Rectangle{
-			image.Rect(150, 100, 116, 216),
-			image.Rect(100, 80, 200, 60),
-			image.Rect(550, 100, 316, 216),
-			image.Rect(300, 80, 400, 60),
-			image.Rect(750, 100, 516, 716),
-			image.Rect(500, 80, 600, 60),
-		},
+		colliders: generateRandomColliders(25, 640, 480),
 	}
 
 	if err := ebiten.RunGame(&game); err != nil {
