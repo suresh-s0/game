@@ -32,40 +32,49 @@ type Game struct {
 	exit      image.Rectangle
 }
 
-func CheckCollisionHorizontal(sprite *Sprite, colliders []image.Rectangle) {
-	for _, col := range colliders {
-		if col.Overlaps(
-			image.Rect(
-				int(sprite.X),
-				int(sprite.Y),
-				int(sprite.X)+16,
-				int(sprite.Y)+16,
-			),
-		) {
-			if sprite.Dx > 0 {
-				sprite.X = float64(col.Min.X) - 16
-			} else if sprite.Dx < 0 {
-				sprite.X = float64(col.Max.X)
-			}
-		}
-	}
+func (g *Game) Border() {
+	g.Hero.X = math.Max(g.Hero.X, 0.0)
+	g.Hero.Y = math.Max(g.Hero.Y, 0.0)
+	g.Hero.X = math.Min(g.Hero.X, 620)
+	g.Hero.Y = math.Min(g.Hero.Y, 460)
+
 }
 
-func CheckCollisionVertical(sprite *Sprite, colliders []image.Rectangle) {
-	for _, col := range colliders {
-		if col.Overlaps(
-			image.Rect(
-				int(sprite.X),
-				int(sprite.Y),
-				int(sprite.X)+16,
-				int(sprite.Y)+16,
-			),
-		) {
-			if sprite.Dy > 0 {
-				sprite.Y = float64(col.Min.Y) - 16
-			} else if sprite.Dy < 0 {
-				sprite.Y = float64(col.Max.Y)
+func (g *Game) generateRandomExit() {
+	exitWidth := 20
+	exitHeight := 20
+
+	for {
+		// Randomly choose one of the four borders: 0 = top, 1 = bottom, 2 = left, 3 = right
+		border := rand.Intn(4)
+
+		switch border {
+		case 0: // Top border
+			x := rand.Intn(640 - exitWidth)
+			g.exit = image.Rect(x, 0, x+exitWidth, exitHeight)
+		case 1: // Bottom border
+			x := rand.Intn(640 - exitWidth)
+			g.exit = image.Rect(x, 480-exitHeight, x+exitWidth, 480)
+		case 2: // Left border
+			y := rand.Intn(480 - exitHeight)
+			g.exit = image.Rect(0, y, exitWidth, y+exitHeight)
+		case 3: // Right border
+			y := rand.Intn(480 - exitHeight)
+			g.exit = image.Rect(640-exitWidth, y, 640, y+exitHeight)
+		}
+
+		// Check if the exit overlaps any existing colliders
+		overlap := false
+		for _, col := range g.colliders {
+			if g.exit.Overlaps(col) {
+				overlap = true
+				break
 			}
+		}
+
+		// If no overlap, break the loop
+		if !overlap {
+			break
 		}
 	}
 }
@@ -115,48 +124,40 @@ func generateRandomColliders(num int, maxX, maxY int, exitRect image.Rectangle) 
 	return colliders
 }
 
-func (g *Game) Border() {
-	g.Hero.X = math.Max(g.Hero.X, 0.0)
-	g.Hero.Y = math.Max(g.Hero.Y, 0.0)
-	g.Hero.X = math.Min(g.Hero.X, 620)
-	g.Hero.Y = math.Min(g.Hero.Y, 460)
-}
-
-func (g *Game) generateRandomExit() {
-	exitWidth := 20
-	exitHeight := 20
-
-	for {
-		// Randomly choose one of the four borders: 0 = top, 1 = bottom, 2 = left, 3 = right
-		border := rand.Intn(4)
-
-		switch border {
-		case 0: // Top border
-			x := rand.Intn(640 - exitWidth)
-			g.exit = image.Rect(x, 0, x+exitWidth, exitHeight)
-		case 1: // Bottom border
-			x := rand.Intn(640 - exitWidth)
-			g.exit = image.Rect(x, 480-exitHeight, x+exitWidth, 480)
-		case 2: // Left border
-			y := rand.Intn(480 - exitHeight)
-			g.exit = image.Rect(0, y, exitWidth, y+exitHeight)
-		case 3: // Right border
-			y := rand.Intn(480 - exitHeight)
-			g.exit = image.Rect(640-exitWidth, y, 640, y+exitHeight)
-		}
-
-		// Check if the exit overlaps any existing colliders
-		overlap := false
-		for _, col := range g.colliders {
-			if g.exit.Overlaps(col) {
-				overlap = true
-				break
+func CheckCollisionHorizontal(sprite *Sprite, colliders []image.Rectangle) {
+	for _, col := range colliders {
+		if col.Overlaps(
+			image.Rect(
+				int(sprite.X),
+				int(sprite.Y),
+				int(sprite.X)+16,
+				int(sprite.Y)+16,
+			),
+		) {
+			if sprite.Dx > 0 {
+				sprite.X = float64(col.Min.X) - 16
+			} else if sprite.Dx < 0 {
+				sprite.X = float64(col.Max.X)
 			}
 		}
+	}
+}
 
-		// If no overlap, break the loop
-		if !overlap {
-			break
+func CheckCollisionVertical(sprite *Sprite, colliders []image.Rectangle) {
+	for _, col := range colliders {
+		if col.Overlaps(
+			image.Rect(
+				int(sprite.X),
+				int(sprite.Y),
+				int(sprite.X)+16,
+				int(sprite.Y)+16,
+			),
+		) {
+			if sprite.Dy > 0 {
+				sprite.Y = float64(col.Min.Y) - 16
+			} else if sprite.Dy < 0 {
+				sprite.Y = float64(col.Max.Y)
+			}
 		}
 	}
 }
@@ -275,6 +276,8 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	offsetX := float64(sw-640) / 2
 	offsetY := float64(sh-480) / 2
 
+	// border
+
 	borderColor := color.RGBA{0, 0, 0, 255}
 	borderThickness := 3.0
 
@@ -284,29 +287,30 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, float32(offsetX), float32(offsetY), float32(borderThickness), 480, borderColor, true)
 	vector.DrawFilledRect(screen, float32(offsetX+640-borderThickness), float32(offsetY), float32(borderThickness), 480, borderColor, true)
 
+	// Draw the Hero
+
 	optsHero := ebiten.DrawImageOptions{}
 
 	// Apply offset to the hero position
 	optsHero.GeoM.Translate(g.Hero.X+offsetX, g.Hero.Y+offsetY)
-
-	// opts.GeoM.Translate(g.Hero.X, g.Hero.Y)
 
 	screen.DrawImage(g.Hero.img.SubImage(
 		image.Rect(0, 0, 16, 16)).(*ebiten.Image),
 		&optsHero)
 	optsHero.GeoM.Reset()
 
+	// Draw the Villains
 	for _, villain := range g.villains {
 		optsVillain := ebiten.DrawImageOptions{}
 		optsVillain.GeoM.Translate(villain.X+offsetX, villain.Y+offsetY)
 		screen.DrawImage(villain.img.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image), &optsVillain)
 		optsVillain.GeoM.Reset()
 	}
-	// border
-	g.Border()
+
 	if g.caught {
 		ebitenutil.DebugPrint(screen, "You got caught!")
 	}
+
 	// exit panel
 	exitColor := color.RGBA{0, 255, 0, 0} // Green exit
 	vector.DrawFilledRect(screen,
@@ -317,6 +321,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		exitColor,
 		true,
 	)
+
 	// colliders
 	for _, col := range g.colliders {
 		vector.DrawFilledRect(screen,
