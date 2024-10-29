@@ -277,7 +277,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	offsetY := float64(sh-480) / 2
 
 	// border
-
+	g.Border()
 	borderColor := color.RGBA{0, 0, 0, 255}
 	borderThickness := 3.0
 
