@@ -16,29 +16,34 @@
 Compile to WebAssembly: You need to build your Go code to WebAssembly (WASM). Run the following command in your project directory:
 
 bash
-Copy code
+
 GOOS=js GOARCH=wasm go build -o your_game.wasm
 This will create the your_game.wasm file.
 
 Copy the wasm_exec.js file: You need the wasm_exec.js file to handle the WebAssembly execution in the browser. This file is usually located in your Go installation under $(go env GOROOT)/misc/wasm/. Copy it to your project directory. Here’s how:
 
 bash
-Copy code
+
 cp $(go env GOROOT)/misc/wasm/wasm_exec.js .
-Serve your files: You can start a simple HTTP server to serve your files. If you have Python installed, you can use the following command:
+Serve your files: You can start a simple HTTP server to serve your files. If you have Python installed,
+ you can use the following command:
 
 bash
-Copy code
+
 python3 -m http.server
 or for Python 2:
 
 bash
-Copy code
+
 python -m SimpleHTTPServer
-Open the web browser: Go to http://localhost:8000 in your web browser. Make sure your index.html file is properly set up to load your_game.wasm and wasm_exec.js. Here's a basic example of how your index.html might look:
+Open the web browser: Go to http://localhost:8000 in your web browser. Make sure your index.
+html file is properly set up to load your_game.wasm and wasm_exec.js. Here's a basic example of how your index.html might look:
+
+===========================================================================================================
+
 
 html
-Copy code
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -61,3 +66,200 @@ Play your game: Once everything is set up, your game should run in the browser.
 ================================================================================================================
 
  cp /snap/go/10730/misc/wasm/wasm_exec.js ~/Desktop/PROJECTS/game/
+==================================================================================================================
+
+** codes 
+
+###  structs for the game
+       
+        *Sprite
+        *Villain
+        *Game
+
+$$ ( the type of the variable )
+
+==> in Sprite the image (*ebiten.Image) and X,Y,Dx,Dy (float 64 ) the position of the characters.
+
+==> In Villain it will have the embedded of *Sprite
+
+==> In the Game hero (*Sprite) villain ([]of *Villain), colliders ([]image.Rectangle),exit (image.Rectangle).
+
+
+### functions
+
+$$   * -> extra for game addtional functions(optional).  ** -> need for run the game 'predefined (mandatory)
+
+    * func (g *Game) Border(screen *ebiten.Image, offsetX, offsetY float64)
+
+    * func (g *Game) generateRandomExit()
+
+    * func generateRandomColliders(num int, maxX, maxY int) []image.Rectangle 
+
+     
+    * func CheckCollisionHorizontal(sprite *Sprite, colliders []image.Rectangle)
+
+    * func CheckCollisionVertical(sprite *Sprite, colliders []image.Rectangle)
+
+    * func (g *Game) resetGame()
+
+    ** func (g *Game) Update() error 
+    ** func (g *Game) Draw(screen *ebiten.Image)
+    ** func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) 
+    ** func (g *Game) main()
+    
+
+### Border() 
+
+    >> This will define the border of the game the characters,and the colliders can't move past this position.
+    
+    >> it will ask for an *ebiten.Image  to draw here, which is the screen, and offset (X,Y)value for deciding the size of the border.
+  
+    >> first make sure the characters can move within the border the maximum width(g.Hero.X) and height(g.Hero.Y) is (0.0,0.0),
+        and the minimum width and height is (620.0,460.0). in the default screen.
+
+    >> this just make the invisible border. for visibility we have to draw it. 
+
+
+   >> then this function is called in the ** Draw function .because it is drawing the border.
+ 
+
+###  generateRandomExit()
+
+    >> this will be a small rectangle that will  appear on the border to notify the exit with green color.
+
+    >> height and width will be 20. it should be able to  appear on all sides of the border. that one side of the border  will be chosen randomly.
+
+    >>and check for  overlap with the colliders.
+
+
+
+###  generateRandomColliders(num int, maxX, maxY int) []image.Rectangle 
+
+    >> this is one of the values in the game struct . so this function should be called whenever game is started or restarted, in the Game Struct.(main func).
+
+    >> this will accept num of  colliders, maxX, maxY  for the maximum width and height (border) (620,480).and exitrect as the exit panel .
+         and returns an array colliders as  []image.Rectangle 
+
+    >> fist create a num (for loop) of  colliders and define its maximum height and width . and generate random positions check for the overlaps with the border.
+        and also overlap with each other and the exit panel .
+
+    >> if both are success create a num  colliders inside the border with the condition of no overlapping with eachother and exit panel .
+     
+    >> and return the []of colliders. 
+
+
+### CheckCollisionHorizontal(sprite *Sprite, colliders []image.Rectangle) && CheckCollisionVertical(sprite *Sprite, colliders []image.Rectangle)
+
+    >> the { generateRandomColliders(num int, maxX, maxY int) []image.Rectangle } function only create a rectangular shape colliders ,these two functions 
+        make them as colliders.nothing can pass throw them.
+
+    >> for it accept Sprite and colliders, one function make sure nothing passes through  horizontally, another is make sure vertically.
+
+    >> these  functions are called inside the {Update function} for hero and also for villain .
+     
+    >> if the sprite(hero,villain) touches the collider (overlap) it make sure not passthrough both vertically and horizontally.
+
+
+### resetGame()
+
+    >> this function just reassign the position of the hero and villain and generateRandomColliders and generateRandomExit .
+
+
+### Update()
+
+
+    >>this is the function that will be used for every update happening in the game .
+
+    ***Hero 
+
+    >>First hero movement declare the keys for moving the hero in the directions.
+
+    >>by pressing the key it will increase the position X,Y,Dx,Dy .
+
+    >> Next ,call the {{CheckCollisionHorizontal } and {CheckCollisionVertical}} with the hero sprite so the hero won't
+          pass through the colliders.
+
+    *** villain
+
+    >> for villain movement increase the villain's X,Y,Dx,Dy towards the hero's position.
+        (by finding the distance between the hero and villain ).use for loop ,because of multiple villains.
+          and maintain distance between eachother among villains.
+
+    >> Next call the {{CheckCollisionHorizontal } and {CheckCollisionVertical}} with the villain sprite so the villain won't
+          pass throw the colliders.
+
+    >> if the villain  reaches the hero's position just show the message "you get caught"
+
+    >> check if the hero's position reaches the exit point ;if it does, call the {resetGame} function for  restart the game .
+
+
+### Draw()
+
+    >> this function is used for draw anything on the screen.it is the reason we able to see the hero ,villain,colliders,border,exit.
+
+    >> first give the color for the game panel using screen.Fill("color of u r choice")
+
+    >> and define the offset if the screen became full screen .and Adjust the gaming panle  to the center of the screen.
+
+    >>draw the border :
+
+
+            >>for the border to  appear on the screen we have to draw using **(vector.DrawFilledRect()).
+            this will accept the screen,X,Y,width,height,color,bool. have to change the value of  X,Y,width,height according to the 4 sides.
+
+            >>if the screen is maximized(full screen) then the offset will be used.
+
+
+
+    >>draw the hero:
+
+            >> using screen.DrawImage(),  it will ask for img(*ebiten.Image) and options(ebiten.DrawImageOptions{}).
+              give the Hero's image and its starting position. Reset the hero's options.
+
+              [
+                optsHero := ebiten.DrawImageOptions{}
+                optsHero.GeoM.Translate(g.Hero.X+offsetX, g.Hero.Y+offsetY)
+
+                	screen.DrawImage(g.Hero.img.SubImage(image.Rect(0, 0, 16, 16)).(*ebiten.Image),&optsHero)
+	                optsHero.GeoM.Reset()
+              ]
+
+              >>SubImage is used to cut out the one image out of the full image
+
+    >>draw the villain:
+
+            >> same as hero but use for loop for multiple villains. screen.DrawImage() to this function give villain's image and position.
+            and reset it  each time.
+
+    >> draw the exit:
+
+            >>use vector.DrawFilledRect func for drawing the exit panel .
+
+    >> draw the colliders:
+
+            >>use vector.DrawFilledRect func for drawing the colliders  .
+
+### Layout()
+
+    >> this function accept outside Width and height and returns ebiten.WindowSize().
+
+
+### main()    
+
+    >>set the default WindowSize/palyable area using {ebiten.SetWindowSize(640, 480)}
+
+    >> set the game title using {ebiten.SetWindowTitle("Runner Game!")}
+
+    >> enable the option to Adjust screen by using {ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)}
+
+    >> get the hero image by using {ebitenutil.NewImageFromFile("path")}
+
+    >> do the same for villain image in the global area.
+
+    >> next create a game by giving the values for game struct to start the game.
+
+    >> provide the hero by sprite{},villain by  []villain sprite,colider by calling generateRandomColliders.
+    
+    >> and call the  generateRandomExit func.
+
+    >> to run the game use ebiten.RunGame() and pass the game struct to it.
